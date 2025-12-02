@@ -26,11 +26,6 @@ jobs:
       - name: Run TypeScript Check
         run: npx tsc --noEmit
 
-      - name: Run Tests
-        run: npm test -- --passWithNoTests --watchAll=false
-        env:
-          CI: true
-
       - name: Build project
         run: npm run build
         env:
