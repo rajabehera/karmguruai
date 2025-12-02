@@ -1,0 +1,7 @@
+{
+  "name": "KarmGuruAI",
+  "description": "Futuristic AI-powered career preparation platform featuring real-time voice interviews, personalized roadmaps, and exam preparation.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
