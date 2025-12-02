@@ -211,10 +211,10 @@ const App: React.FC = () => {
           <NavItem view={View.JOB_SEARCH} icon={Briefcase} label="Job Search" />
           <NavItem view={View.REVERSE_INTERVIEW} icon={Users} label="Reverse Interview" />
           <NavItem view={View.CODE_LAB} icon={Code} label="Code Lab" />
-          <NavItem view={View.EXAM_PREP} icon={GraduationCap} label="Exam Prep" />
+          {/* <NavItem view={View.EXAM_PREP} icon={GraduationCap} label="Exam Prep" />
           <NavItem view={View.APTITUDE} icon={Compass} label="Career Architect" />
           <NavItem view={View.ENGLISH_COACH} icon={Globe} label="English Coach" />
-          <NavItem view={View.RESUME_BUILDER} icon={FileText} label="Resume Builder" />
+          <NavItem view={View.RESUME_BUILDER} icon={FileText} label="Resume Builder" /> */}
           {user.role === 'ADMIN' && <div className="mt-4 pt-4 border-t border-karm-sage"><NavItem view={View.ADMIN} icon={Shield} label="Admin Panel" /></div>}
           <div className="my-4 h-px bg-karm-sage"></div>
           <NavItem view={View.PRICING} icon={Crown} label="Upgrade Plan" highlight />

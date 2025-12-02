@@ -1,15 +1,15 @@
 {
-  "name": " https://rajabehera.github.io/karmguruai",
+  "name": "karmguruai",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://rajabehera.github.io/karmguruai",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
+     "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
