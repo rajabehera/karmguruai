@@ -1,13 +1,18 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import bodyParser from "body-parser";
+
+dotenv.config();
+
 const app = express();
 
-const PORT = 5000;
-const { GoogleGenAI } = require('@google/genai');
 // Middleware
 app.use(cors());
+app.use(bodyParser.json());
+const PORT = 5000;
+import { GoogleGenAI } from "@google/genai";
+// Middleware
 app.use(bodyParser.json());
 
 // --- MOCK DATABASE (IN-MEMORY) ---
