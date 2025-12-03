@@ -51,6 +51,31 @@ export interface LiveSessionConfig {
   onError: (err: Error) => void;
 }
 
+const API_URL = import.meta.env.VITE_API_URL as string;
+
+export async function generateResponse(prompt: string): Promise<string> {
+  try {
+    const response = await fetch(`${API_URL}/api/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prompt }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Request failed: ${response.statusText}`);
+    }
+
+    const data: { text: string } = await response.json();
+    return data.text;
+
+  } catch (error) {
+    console.error("API Error:", error);
+    return "❌ Something went wrong. Try again!";
+  }
+}
+
 export class GeminiLiveSession {
   private ai: GoogleGenAI;
   private role: string;

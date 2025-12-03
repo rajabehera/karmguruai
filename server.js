@@ -8,7 +8,14 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+// app.use(cors({
+//   origin: "https://karmguruai.onrender.com/"
+// }));
+
+app.use(cors({
+  origin: "*", // or your frontend URL for security
+  methods: ['GET', 'POST']
+}));
 app.use(bodyParser.json());
 const PORT = 5000;
 import { GoogleGenAI } from "@google/genai";
