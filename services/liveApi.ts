@@ -71,22 +71,41 @@ export class GeminiLiveSession {
   private onClose: () => void;
   private onError: (err: Error) => void;
 
-  constructor(config: LiveSessionConfig) {
-    this.role = config.role;
-    this.interviewConfig = config.config;
-    this.systemInstruction = config.systemInstruction;
-    this.voiceName = config.voiceName || 'Kore';
-    this.onAudioData = config.onAudioData;
-    this.onClose = config.onClose;
-    this.onError = config.onError;
+  // constructor(config: LiveSessionConfig) {
+  //   this.role = config.role;
+  //   this.interviewConfig = config.config;
+  //   this.systemInstruction = config.systemInstruction;
+  //   this.voiceName = config.voiceName || 'Kore';
+  //   this.onAudioData = config.onAudioData;
+  //   this.onClose = config.onClose;
+  //   this.onError = config.onError;
 
-    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  //   this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     
-    // Initialize Audio Contexts
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    this.inputAudioContext = new AudioContextClass({ sampleRate: 44100 });
-    this.outputAudioContext = new AudioContextClass({ sampleRate: 24000 });
-  }
+  //   // Initialize Audio Contexts
+  //   const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+  //   this.inputAudioContext = new AudioContextClass({ sampleRate: 44100 });
+  //   this.outputAudioContext = new AudioContextClass({ sampleRate: 24000 });
+  // }
+
+constructor(config: LiveSessionConfig) {
+  this.role = config.role;
+  this.interviewConfig = config.config;
+  this.systemInstruction = config.systemInstruction;
+  this.voiceName = config.voiceName || "Kore";
+  this.onAudioData = config.onAudioData;
+  this.onClose = config.onClose;
+  this.onError = config.onError;
+
+  this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+
+  // Use browser defaults — do NOT force sampleRate
+  const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+  
+  this.inputAudioContext = new AudioContextClass();
+  this.outputAudioContext = new AudioContextClass();
+}
+
 
   async connect() {
     try {
