@@ -161,7 +161,9 @@ app.post('/api/user/xp', (req, res) => {
     res.status(404).json({ message: 'User not found' });
   }
 });
-
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
 // Start Server
 app.listen(PORT, () => {
   console.log(`Backend Server running on http://localhost:${PORT}`);
