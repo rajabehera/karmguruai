@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const app = express();
-app.use(express.json());
+import express from "express";
 const PORT = 5000;
 const { GoogleGenAI } = require('@google/genai');
 // Middleware
