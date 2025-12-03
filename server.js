@@ -166,11 +166,11 @@ app.post('/api/user/xp', (req, res) => {
     res.status(404).json({ message: 'User not found' });
   }
 });
-app.use(express.static(path.join(__dirname, "../dist")));
+app.use(express.static(path.join(__dirname, "dist")));
 
 // ⚡ Catch-all route (fixed for Express 5)
 app.use((req, res) => {
-  res.sendFile(path.join(__dirname, "../dist/index.html"));
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 // Start Server
 app.listen(PORT, () => {
