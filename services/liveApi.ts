@@ -80,7 +80,7 @@ export class GeminiLiveSession {
   //   this.onClose = config.onClose;
   //   this.onError = config.onError;
 
-  //   this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  //   this.ai = new GoogleGenAI({ apiKey: import.meta.env.API_KEY || '' });
     
   //   // Initialize Audio Contexts
   //   const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -97,7 +97,7 @@ export class GeminiLiveSession {
 //   this.onClose = config.onClose;
 //   this.onError = config.onError;
 
-//   this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+//   this.ai = new GoogleGenAI({ apiKey: import.meta.env.API_KEY || "" });
 
 //   // Use browser defaults — do NOT force sampleRate
 //   const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -117,10 +117,14 @@ constructor(config: LiveSessionConfig) {
 
   // 🔥 Load API Key here
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+  if (!apiKey) {
+  throw new Error("API Key missing!");
+}
   console.log("Loaded API KEY:", apiKey); // Should not be undefined
 
   this.ai = new GoogleGenAI({ apiKey });
 
+  
   const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
   this.inputAudioContext = new AudioContextClass();
   this.outputAudioContext = new AudioContextClass();

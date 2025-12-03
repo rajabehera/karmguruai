@@ -2,7 +2,7 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { RoadmapStep, MCQuestion, CareerPathRecommendation, InterviewReport, InterviewConfig, CodeRunResult, TestCase, RoleplayAnalysis, Job } from "../types";
 
-const apiKey = process.env.API_KEY || '';
+const apiKey = import.meta.env.API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
 
 export const generateRoadmap = async (goal: string, currentStatus: string): Promise<RoadmapStep[]> => {
