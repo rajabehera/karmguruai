@@ -120,7 +120,7 @@ constructor(config: LiveSessionConfig) {
   if (!apiKey) {
   throw new Error("API Key missing!");
 }
-  console.log("Loaded API KEY:"); // Should not be undefined
+  console.log("Loaded API KEY:",apiKey); // Should not be undefined
 
   this.ai = new GoogleGenAI({ apiKey });
 
