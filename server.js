@@ -1,11 +1,11 @@
-
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-
 const app = express();
+app.use(express.json());
 const PORT = 5000;
-
+const { GoogleGenAI } = require('@google/genai');
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
@@ -21,6 +21,38 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 const generateToken = () => Math.random().toString(36).substr(2) + Date.now().toString(36);
 
 // --- ROUTES ---
+
+
+
+// ⚠️ Key is securely accessed ONLY on the server from environment variables
+const apiKey = process.env.GEMINI_API_KEY; 
+const ai = new GoogleGenAI({ apiKey }); 
+
+app.post('/api/generate', async (req, res) => {
+    const { prompt } = req.body;
+
+    if (!apiKey) {
+        return res.status(500).json({ error: "Server API Key is not configured." });
+    }
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: [{ parts: [{ text: prompt }] }],
+        });
+        
+        // Return only the text response to the client
+        res.json({ text: response.text });
+
+    } catch (error) {
+        console.error("Gemini API Error:", error);
+        res.status(500).json({ error: 'Failed to generate content' });
+    }
+});
+
+
+
+
 
 // 1. REGISTER
 app.post('/api/auth/register', (req, res) => {
