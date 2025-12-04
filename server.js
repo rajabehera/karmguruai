@@ -42,7 +42,7 @@ const generateToken = () => Math.random().toString(36).substr(2) + Date.now().to
 // --- ROUTES ---
 
 
-const wss = new WebSocketServer({ server, path: "/live" });
+const wss = new WebSocketServer({ app, path: "/live" });
 // ⚠️ Key is securely accessed ONLY on the server from environment variables
 const apiKey = process.env.GEMINI_API_KEY; 
 const ai = new GoogleGenAI({ apiKey }); 
@@ -128,7 +128,7 @@ wss.on("connection", async (ws, req) => {
   });
 });
 
-server.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Live proxy running on port ${PORT} (ws path /live)`);
 });
 app.post('/api/generate', async (req, res) => {
