@@ -8,7 +8,9 @@ import { fileURLToPath } from "url";
 import { GoogleGenAI } from "@google/genai";
 import { WebSocketServer } from "ws";
 dotenv.config();
-const wss = new WebSocketServer({ server });
+
+const app = express();
+const wss = new WebSocketServer({ app });
 
 wss.on("connection", async (client) => {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -27,8 +29,6 @@ wss.on("connection", async (client) => {
 
   client.on("close", () => session.close());
 });
-const app = express();
-
 // Middleware
 // app.use(cors({
 //   origin: "https://karmguruai.onrender.com/"
