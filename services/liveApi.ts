@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
+import {  LiveServerMessage, Modality } from '@google/genai';
 import { InterviewConfig } from '../types';
 
 // Audio Utils (Encoding/Decoding)
@@ -143,7 +143,7 @@ constructor(config: LiveSessionConfig) {
 }
   console.log("Loaded API KEY:"); // Should not be undefined
 
-  this.ai = new GoogleGenAI({ apiKey });
+
 
   
   const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
