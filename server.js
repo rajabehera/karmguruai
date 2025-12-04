@@ -44,9 +44,7 @@ const generateToken = () => Math.random().toString(36).substr(2) + Date.now().to
 // ⚠️ Key is securely accessed ONLY on the server from environment variables
 const apiKey = process.env.GEMINI_API_KEY; 
 const ai = new GoogleGenAI({ apiKey }); 
-app.get("/", (req, res) => {
-  res.send("Backend is running!");
-});
+
 app.post('/api/generate', async (req, res) => {
     const { prompt } = req.body;
 
