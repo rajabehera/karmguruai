@@ -6,8 +6,27 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { GoogleGenAI } from "@google/genai";
+import { WebSocketServer } from "ws";
 dotenv.config();
+const wss = new WebSocketServer({ server });
 
+wss.on("connection", async (client) => {
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+  const session = await model.startChatSession({
+    generationConfig: { responseModalities: ["audio"] }
+  });
+
+  client.on("message", async (msg) => {
+    const response = await session.sendMessageStream(JSON.parse(msg));
+    for await (const chunk of response.stream) {
+      client.send(chunk.text());
+    }
+  });
+
+  client.on("close", () => session.close());
+});
 const app = express();
 
 // Middleware

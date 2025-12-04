@@ -198,7 +198,7 @@ export class GeminiLiveSession {
   private nextStartTime = 0;
   private isActive = false;
   private sources = new Set<AudioBufferSourceNode>();
-  
+  private ws: WebSocket | null = null;
   private onAudioData: (buffer: AudioBuffer) => void;
   private onClose: () => void;
   private onError: (err: Error) => void;
@@ -255,10 +255,30 @@ constructor(config: LiveSessionConfig) {
   this.outputAudioContext = new AudioContextClass();
 }
 
-  async connect() {
-    try {
-      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.isActive = true;
+async connect() {
+  try {
+    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    this.isActive = true;
+
+    // *** MOVE WebSocket init into constructor or here ***
+    const wsUrl = `${API_URL.replace(/^http/, "ws")}/live`;
+
+    this.ws = new WebSocket(wsUrl);
+
+    this.ws.onopen = () => {
+      console.log("Connected to websocket proxy server");
+      this.ws.send(JSON.stringify({ type: "session_init", voiceName: this.voiceName }));
+    };
+
+    this.ws.onclose = () => {
+      console.log("WebSocket closed");
+      this.onClose();
+    };
+
+    this.ws.onerror = (err) => {
+      console.error("WebSocket error", err);
+      this.onError(new Error("WebSocket failed"));
+    };
 
       // Determine System Instruction
       let finalInstruction = this.systemInstruction;
