@@ -53,23 +53,87 @@ export interface LiveSessionConfig {
 
 const API_URL = import.meta.env.VITE_API_URL || "https://karmguruai.onrender.com";
 
-async function generateResponse(prompt) {
-  try {
+
+
+/**
+ * Fetches content from the backend using an HTTP streaming connection (no WebSockets).
+ * @param prompt The user's text prompt.
+ * @param updateCallback Function to call with chunks of text as they arrive.
+ * @returns A promise that resolves to the final complete response text.
+ */
+export async function streamResponse(prompt: string, updateCallback: (chunk: string) => void): Promise<string> {
     const response = await fetch(`${API_URL}/api/generate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ prompt })
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt })
     });
 
-    const data = await response.json();
-    return data.text;
-  } catch (err) {
-    console.error("Frontend error:", err);
-    return "Error connecting to server.";
-  }
+    if (!response.ok) {
+        // Handle server errors (e.g., status 500)
+        const errorText = await response.text();
+        throw new Error(`Server error (${response.status}): ${errorText}`);
+    }
+
+    // Start reading the response body as a stream
+    const reader = response.body?.getReader();
+    if (!reader) {
+        throw new Error("Response body is not readable.");
+    }
+    
+    const decoder = new TextDecoder('utf-8');
+    let fullResponse = '';
+
+    try {
+        // Loop to read chunks until 'done' is true
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            fullResponse += chunk;
+            
+            // Call the callback function immediately with the new chunk
+            updateCallback(chunk); 
+        }
+    } catch (e) {
+        console.error("Error reading stream:", e);
+        throw new Error("Stream reading failed.");
+    } finally {
+        reader.releaseLock();
+    }
+
+    return fullResponse;
 }
+
+// NOTE: You would replace the existing `generateResponse` with this new function 
+// and update any parts of your app that use it to handle the streaming callback.
+
+
+
+
+
+
+
+
+// async function generateResponse(prompt) {
+//   try {
+//     const response = await fetch(`${API_URL}/api/generate`, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({ prompt })
+//     });
+
+//     const data = await response.json();
+//     return data.text;
+//   } catch (err) {
+//     console.error("Frontend error:", err);
+//     return "Error connecting to server.";
+//   }
+// }
 
 // inside GeminiLiveSession (browser)
 // async function connect() {
