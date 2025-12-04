@@ -13,59 +13,43 @@ dotenv.config();
 
 const app = express();
 const server = createServer(app); // <-- REQUIRED for WebSocket
-const ws = new WebSocket(
-  `wss://generativelanguage.googleapis.com/v1beta/realtime:connect?key=${process.env.VITE_GOOGLE_API_KEY}`
-);
-
-ws.onopen = () => {
-  console.log("Connected to Gemini");
-  ws.send(JSON.stringify({
-    request: {
-      textPrompt: "Hello Gemini live!"
-    }
-  }));
-};
-
-ws.onmessage = (event) => {
-  console.log("Response:", event.data);
-};
 
 // WebSocket server MUST attach to HTTP server
-// const wss = new WebSocketServer({ server, path: "/live" });
+const wss = new WebSocketServer({ server, path: "/live" });
 
-// console.log("WebSocket running...");
+console.log("WebSocket running...");
 
-// wss.on("connection", async (client) => {
-//   console.log("🔗 User connected");
+wss.on("connection", async (client) => {
+  console.log("🔗 User connected");
 
-//   const genAI = new GoogleGenerativeAI(process.env.VITE_GOOGLE_API_KEY);
+  const genAI = new GoogleGenerativeAI(process.env.VITE_GOOGLE_API_KEY);
 
-//   const model = genAI.getGenerativeModel({
-//     model: "gemini-2.5-flash"
-//   });
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash"
+  });
 
-//   const session = await model.startChat({
-//     generationConfig: { responseModalities: ["text"] }
-//   });
+  const session = await model.startChat({
+    generationConfig: { responseModalities: ["text"] }
+  });
 
-//   client.on("message", async (msg) => {
-//     try {
-//       const result = await session.sendMessageStream(msg.toString());
+  client.on("message", async (msg) => {
+    try {
+      const result = await session.sendMessageStream(msg.toString());
 
-//       for await (const chunk of result.stream) {
-//         client.send(chunk.text());
-//       }
-//     } catch (err) {
-//       console.error("WebSocket Error:", err);
-//       client.send("Error: " + err.message);
-//     }
-//   });
+      for await (const chunk of result.stream) {
+        client.send(chunk.text());
+      }
+    } catch (err) {
+      console.error("WebSocket Error:", err);
+      client.send("Error: " + err.message);
+    }
+  });
 
-//   client.on("close", () => {
-//     console.log("❌ Client disconnected");
-//     session.close();
-//   });
-// });
+  client.on("close", () => {
+    console.log("❌ Client disconnected");
+    session.close();
+  });
+});
 
 // Middleware
 app.use(cors({ origin: "*", methods: ["GET", "POST"] }));
@@ -78,8 +62,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
-
 const ai = new GoogleGenerativeAI(process.env.VITE_GOOGLE_API_KEY);
+
 console.log("Gemini Key Loaded:", !!process.env.VITE_GOOGLE_API_KEY);
 // HTTP Route API
 app.post("/api/generate", async (req, res) => {
