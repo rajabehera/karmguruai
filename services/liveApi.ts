@@ -51,30 +51,26 @@ export interface LiveSessionConfig {
   onError: (err: Error) => void;
 }
 
-const API_URL = import.meta.env.VITE_API_URL as string;
+const API_URL = import.meta.env.VITE_API_URL || "https://karmguruai.onrender.com";
 
-export async function generateResponse(prompt: string): Promise<string> {
+async function generateResponse(prompt) {
   try {
     const response = await fetch(`${API_URL}/api/generate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({ prompt })
     });
 
-    if (!response.ok) {
-      throw new Error(`Request failed: ${response.statusText}`);
-    }
-
-    const data: { text: string } = await response.json();
+    const data = await response.json();
     return data.text;
-
-  } catch (error) {
-    console.error("API Error:", error);
-    return "❌ Something went wrong. Try again!";
+  } catch (err) {
+    console.error("Frontend error:", err);
+    return "Error connecting to server.";
   }
 }
+
 
 export class GeminiLiveSession {
   private ai: GoogleGenAI;
