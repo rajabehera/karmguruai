@@ -5,7 +5,6 @@ import bodyParser from "body-parser";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { WebSocketServer } from "ws";
 import { GoogleGenAI } from "@google/genai";
 dotenv.config();
 
@@ -42,119 +41,48 @@ const generateToken = () => Math.random().toString(36).substr(2) + Date.now().to
 // --- ROUTES ---
 
 
-const wss = new WebSocketServer({ app, path: "/live" });
+// const wss = new WebSocketServer({ server, path: "/live" });
 // ⚠️ Key is securely accessed ONLY on the server from environment variables
-const apiKey = process.env.GEMINI_API_KEY; 
-const ai = new GoogleGenAI({ apiKey }); 
-const client = new GoogleGenerativeAI(apiKey);
-wss.on("connection", async (ws, req) => {
-  console.log("Browser connected to /live");
+// const apiKey = process.env.GEMINI_API_KEY; 
 
-  // Create a Gemini live session for this WS connection
-  let geminiSession;
-  try {
-    geminiSession = await client.live.connect({
-      model: "gemini-2.5-flash-native-audio-preview-09-2025",
-      // config below is example — you can accept parameters from client
-      config: {
-        responseModalities: ["AUDIO"],
-        speechConfig: {
-          voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } }
-        }
-      },
-      callbacks: {
-        onopen: () => {
-          console.log("Gemini live session opened");
-          ws.send(JSON.stringify({ type: "session_open" }));
-        },
-        onmessage: (msg) => {
-          // Forward Gemini messages to browser
-          try {
-            ws.send(JSON.stringify({ type: "gemini_message", payload: msg }));
-          } catch (e) { console.error("WS send error", e); }
-        },
-        onclose: () => {
-          console.log("Gemini session closed");
-          try { ws.send(JSON.stringify({ type: "session_closed" })); } catch {}
-        },
-        onerror: (err) => {
-          console.error("Gemini session error", err);
-          try { ws.send(JSON.stringify({ type: "session_error", error: String(err) })); } catch {}
-        },
-      },
-    });
-  } catch (err) {
-    console.error("Failed to create Gemini session:", err);
-    ws.send(JSON.stringify({ type: "session_error", error: "Failed to create session on server" }));
-    ws.close();
-    return;
-  }
+// const client = new GoogleGenerativeAI(apiKey);
 
-  // When messages come from browser, forward to gemini session
-  ws.on("message", async (messageRaw) => {
-    // Expect either JSON control messages or audio payloads
-    // We'll parse JSON; if it's binary, handle as Buffer or base64 string.
-    let msg;
-    try { msg = JSON.parse(messageRaw.toString()); } catch (e) { msg = null; }
+// app.post('/api/generate', async (req, res) => {
+//     const { prompt } = req.body;
 
-    try {
-      if (msg && msg.type === "realtime_input") {
-        // Example: { type: "realtime_input", data: { data: "<base64>", mimeType: "audio/pcm;rate=16000" } }
-        await (await geminiSession).sendRealtimeInput({
-          media: { data: msg.data.data, mimeType: msg.data.mimeType } // server SDK may accept base64
-        });
-      } else if (msg && msg.type === "text_input") {
-        // Example: user typed prompt -> send as regular input
-        await (await geminiSession).sendText({ text: msg.text });
-      } else if (msg && msg.type === "close") {
-        (await geminiSession).close();
-      } else {
-        // Unknown - echo or ignore
-        console.log("Unknown message from client:", msg?.type);
-      }
-    } catch (err) {
-      console.error("Error forwarding to gemini:", err);
-      ws.send(JSON.stringify({ type: "session_error", error: String(err) }));
-    }
-  });
+//     if (!apiKey) {
+//         return res.status(500).json({ error: "Server API Key is not configured." });
+//     }
 
-  ws.on("close", async () => {
-    console.log("Browser WS closed, cleaning up Gemini session");
-    try { (await geminiSession).close(); } catch {}
-  });
-
-  ws.on("error", (err) => {
-    console.error("WS error:", err);
-  });
-});
-
-app.listen(PORT, () => {
-  console.log(`Live proxy running on port ${PORT} (ws path /live)`);
-});
-app.post('/api/generate', async (req, res) => {
-    const { prompt } = req.body;
-
-    if (!apiKey) {
-        return res.status(500).json({ error: "Server API Key is not configured." });
-    }
-
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: [{ parts: [{ text: prompt }] }],
-        });
+//     try {
+//         const response = await ai.models.generateContent({
+//             model: 'gemini-2.5-flash',
+//             contents: [{ parts: [{ text: prompt }] }],
+//         });
         
-        // Return only the text response to the client
-        res.json({ text: response.text });
+//         // Return only the text response to the client
+//         res.json({ text: response.text });
 
-    } catch (error) {
-        console.error("Gemini API Error:", error);
-        res.status(500).json({ error: 'Failed to generate content' });
-    }
-});
+//     } catch (error) {
+//         console.error("Gemini API Error:", error);
+//         res.status(500).json({ error: 'Failed to generate content' });
+//     }
+// });
 
 
 
+// The client gets the API key from the environment variable `GEMINI_API_KEY`.
+const ai = new GoogleGenAI({ apiKey: process.env.VITE_GOOGLE_API_KEY });
+
+async function main() {
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: "Explain how AI works in a few words",
+  });
+  console.log(response.text);
+}
+
+main();
 
 
 // 1. REGISTER
