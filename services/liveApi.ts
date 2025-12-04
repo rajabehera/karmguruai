@@ -71,6 +71,53 @@ async function generateResponse(prompt) {
   }
 }
 
+// inside GeminiLiveSession (browser)
+async function connect() {
+  // open websocket to your server
+  const wsUrl = (import.meta.env.VITE_API_URL || "https://karmguruai.onrender.com").replace(/^http/, "ws") + "/live";
+  this.ws = new WebSocket(wsUrl);
+
+  this.ws.onopen = () => {
+    console.log("WS open to backend live proxy");
+    this.ws.send(JSON.stringify({ type: "session_init", config: { voiceName: this.voiceName } }));
+  };
+
+  this.ws.onmessage = async (ev) => {
+    try {
+      const msg = JSON.parse(ev.data);
+      if (msg.type === "gemini_message") {
+        // msg.payload is the Gemini message object forwarded by server
+        // Pass to your existing message handler logic:
+        await this.handleMessage(msg.payload);
+      } else if (msg.type === "session_open") {
+        console.log("Server opened Gemini session");
+      } else if (msg.type === "session_error") {
+        this.onError(new Error(msg.error || "Session error"));
+      } else if (msg.type === "session_closed") {
+        this.onClose();
+      }
+    } catch (e) {
+      console.error("Invalid message from server", e);
+    }
+  };
+
+  this.ws.onclose = () => {
+    console.log("WS closed");
+    this.onClose();
+  };
+
+  this.ws.onerror = (e) => {
+    console.error("WS error", e);
+    this.onError(new Error("WebSocket error"));
+  };
+
+  // The audio capture code you already have will create PCM base64 strings:
+  // in your existing scriptProcessor.onaudioprocess, instead of session.sendRealtimeInput,
+  // send to server:
+  // this.ws.send(JSON.stringify({ type: "realtime_input", data: { data: base64, mimeType: "audio/pcm;rate=16000" } }));
+
+  // Ensure you wait for ws.readyState === WebSocket.OPEN before sending.
+}
 
 export class GeminiLiveSession {
   private ai: GoogleGenAI;
@@ -143,7 +190,7 @@ constructor(config: LiveSessionConfig) {
 }
   console.log("Loaded API KEY:"); // Should not be undefined
 
-
+  this.ai = new GoogleGenAI({ apiKey });
 
   
   const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
