@@ -70,20 +70,35 @@ const generateToken = () => Math.random().toString(36).substr(2) + Date.now().to
 // });
 
 
-
+console.log("Gemini Key Loaded?", !!process.env.GEMINI_API_KEY);
 // The client gets the API key from the environment variable `GEMINI_API_KEY`.
-const ai = new GoogleGenAI({ apiKey: process.env.VITE_GOOGLE_API_KEY });
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY
+});
+// async function main() {
+//   const response = await ai.models.generateContent({
+//     model: "gemini-2.5-flash",
+//     contents: "Explain how AI works in a few words",
+//   });
+//   console.log(response.text);
+// }
 
-async function main() {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: "Explain how AI works in a few words",
-  });
-  console.log(response.text);
-}
+// main();
+app.post("/api/generate", async (req, res) => {
+  try {
+    const { prompt } = req.body;
 
-main();
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt
+    });
 
+    res.json({ text: response.text() });
+  } catch (err) {
+    console.error("Gemini Error →", err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // 1. REGISTER
 app.post('/api/auth/register', (req, res) => {
