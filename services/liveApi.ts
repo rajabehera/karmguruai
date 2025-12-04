@@ -1,5 +1,5 @@
 
-import {  LiveServerMessage, Modality } from '@google/genai';
+import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { InterviewConfig } from '../types';
 
 // Audio Utils (Encoding/Decoding)
