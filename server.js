@@ -4,222 +4,92 @@ import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createServer } from "http";
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { WebSocketServer } from "ws";
+
 dotenv.config();
 
 const app = express();
-const wss = new WebSocketServer({ app });
+const server = createServer(app); // <-- REQUIRED for WebSocket
+
+// WebSocket server MUST attach to HTTP server
+const wss = new WebSocketServer({ server, path: "/live" });
+
+console.log("WebSocket running...");
 
 wss.on("connection", async (client) => {
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  console.log("🔗 User connected");
 
-  const session = await model.startChatSession({
-    generationConfig: { responseModalities: ["audio"] }
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash"
+  });
+
+  const session = await model.startChat({
+    generationConfig: { responseModalities: ["text"] }
   });
 
   client.on("message", async (msg) => {
-    const response = await session.sendMessageStream(JSON.parse(msg));
-    for await (const chunk of response.stream) {
-      client.send(chunk.text());
+    try {
+      const result = await session.sendMessageStream(msg.toString());
+
+      for await (const chunk of result.stream) {
+        client.send(chunk.text());
+      }
+    } catch (err) {
+      console.error("WebSocket Error:", err);
+      client.send("Error: " + err.message);
     }
   });
 
-  client.on("close", () => session.close());
+  client.on("close", () => {
+    console.log("❌ Client disconnected");
+    session.close();
+  });
 });
-// Middleware
-// app.use(cors({
-//   origin: "https://karmguruai.onrender.com/"
-// }));
 
-// Fix __dirname in ES Modules
+// Middleware
+app.use(cors({ origin: "*", methods: ["GET", "POST"] }));
+app.use(bodyParser.json());
+
+const PORT = process.env.PORT || 5000;
+
+// Fix __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.use(cors({
-  origin: "*", // or your frontend URL for security
-  methods: ['GET', 'POST']
-}));
-app.use(bodyParser.json());
-const PORT = 5000;
-// Middleware
-app.use(bodyParser.json());
+console.log("Gemini Key Loaded:", !!process.env.GEMINI_API_KEY);
 
-// --- MOCK DATABASE (IN-MEMORY) ---
-// In a real app, this would be MongoDB or PostgreSQL
-const DB = {
-  users: []
-};
+const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// --- HELPERS ---
-const generateId = () => Math.random().toString(36).substr(2, 9);
-const generateToken = () => Math.random().toString(36).substr(2) + Date.now().toString(36);
-
-// --- ROUTES ---
-
-
-// const wss = new WebSocketServer({ server, path: "/live" });
-// ⚠️ Key is securely accessed ONLY on the server from environment variables
-// const apiKey = process.env.GEMINI_API_KEY; 
-
-// const client = new GoogleGenerativeAI(apiKey);
-
-// app.post('/api/generate', async (req, res) => {
-//     const { prompt } = req.body;
-
-//     if (!apiKey) {
-//         return res.status(500).json({ error: "Server API Key is not configured." });
-//     }
-
-//     try {
-//         const response = await ai.models.generateContent({
-//             model: 'gemini-2.5-flash',
-//             contents: [{ parts: [{ text: prompt }] }],
-//         });
-        
-//         // Return only the text response to the client
-//         res.json({ text: response.text });
-
-//     } catch (error) {
-//         console.error("Gemini API Error:", error);
-//         res.status(500).json({ error: 'Failed to generate content' });
-//     }
-// });
-
-
-console.log("Gemini Key Loaded?", !!process.env.GEMINI_API_KEY);
-// The client gets the API key from the environment variable `GEMINI_API_KEY`.
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY
-});
-// async function main() {
-//   const response = await ai.models.generateContent({
-//     model: "gemini-2.5-flash",
-//     contents: "Explain how AI works in a few words",
-//   });
-//   console.log(response.text);
-// }
-
-// main();
+// HTTP Route API
 app.post("/api/generate", async (req, res) => {
   try {
     const { prompt } = req.body;
 
-    const response = await ai.models.generateContent({
+    const response = await ai.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt
     });
 
-    res.json({ text: response.text() });
+    res.json({ text: response.response.text() });
   } catch (err) {
-    console.error("Gemini Error →", err);
+    console.error("Gemini Error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 1. REGISTER
-app.post('/api/auth/register', (req, res) => {
-  const { name, email, password } = req.body;
-
-  // Validation
-  if (!name || !email || !password) {
-    return res.status(400).json({ message: 'All fields are required' });
-  }
-
-  // Check if user exists
-  const existingUser = DB.users.find(u => u.email === email);
-  if (existingUser) {
-    return res.status(400).json({ message: 'User already exists' });
-  }
-
-  // Create User
-  const newUser = {
-    id: generateId(),
-    name,
-    email,
-    password, // NOTE: In a real app, hash this password (e.g., bcrypt)!
-    plan: 'FREE',
-    credits: {
-      interviews: 2,
-      aiAnalysis: 5
-    },
-    xp: 0,
-    joinedDate: new Date().toLocaleDateString()
-  };
-
-  DB.users.push(newUser);
-
-  // Return user without password
-  const { password: _, ...userWithoutPass } = newUser;
-  res.status(201).json({ user: userWithoutPass, token: generateToken() });
-});
-
-// 2. LOGIN
-app.post('/api/auth/login', (req, res) => {
-  const { email, password } = req.body;
-
-  const user = DB.users.find(u => u.email === email && u.password === password);
-
-  if (!user) {
-    return res.status(401).json({ message: 'Invalid credentials' });
-  }
-
-  const { password: _, ...userWithoutPass } = user;
-  res.json({ user: userWithoutPass, token: generateToken() });
-});
-
-// 3. GET PROFILE
-app.get('/api/user/profile', (req, res) => {
-  // In a real app, you would verify the "Authorization" header token here
-  const email = req.query.email; // Simple lookup for demo
-  
-  const user = DB.users.find(u => u.email === email);
-  if (!user) return res.status(404).json({ message: 'User not found' });
-
-  const { password: _, ...userWithoutPass } = user;
-  res.json(userWithoutPass);
-});
-
-// 4. UPGRADE PLAN
-app.post('/api/user/upgrade', (req, res) => {
-  const { email, plan } = req.body;
-  
-  const userIndex = DB.users.findIndex(u => u.email === email);
-  if (userIndex === -1) return res.status(404).json({ message: 'User not found' });
-
-  // Update Plan
-  DB.users[userIndex].plan = plan;
-  DB.users[userIndex].credits = {
-    interviews: -1, // Unlimited
-    aiAnalysis: 50
-  };
-
-  const { password: _, ...userWithoutPass } = DB.users[userIndex];
-  res.json({ success: true, user: userWithoutPass });
-});
-
-// 5. UPDATE XP (Gamification)
-app.post('/api/user/xp', (req, res) => {
-  const { email, xpAmount } = req.body;
-  
-  const user = DB.users.find(u => u.email === email);
-  if (user) {
-    user.xp += xpAmount;
-    res.json({ success: true, newXp: user.xp });
-  } else {
-    res.status(404).json({ message: 'User not found' });
-  }
-});
+// Serve frontend
 app.use(express.static(path.join(__dirname, "dist")));
 
-// ⚡ Catch-all route (fixed for Express 5)
 app.use((req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
+  res.send("Server running");
 });
-// Start Server
-app.listen(PORT, () => {
-  console.log(`Backend Server running on http://localhost:${PORT}`);
-  console.log(`Mock Database initialized. Data will be lost on restart.`);
+
+// Start server (IMPORTANT: use server.listen not app.listen)
+server.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });

@@ -247,9 +247,8 @@ constructor(config: LiveSessionConfig) {
   this.onClose = config.onClose;
   this.onError = config.onError;
 
-     this.ai = new GoogleGenAI({ apiKey: process.env.VITE_GOOGLE_API_KEY || '' });
+  this.ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GOOGLE_API_KEY });
 
-  
   const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
   this.inputAudioContext = new AudioContextClass();
   this.outputAudioContext = new AudioContextClass();
