@@ -183,14 +183,7 @@ constructor(config: LiveSessionConfig) {
   this.onClose = config.onClose;
   this.onError = config.onError;
 
-  // 🔥 Load API Key here
-//   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-//   if (!apiKey) {
-//   throw new Error("API Key missing!");
-// }
-//   console.log("Loaded API KEY:"); // Should not be undefined
-
-  // this.ai = new GoogleGenAI({ apiKey });
+     this.ai = new GoogleGenAI({ apiKey: process.env.VITE_GOOGLE_API_KEY || '' });
 
   
   const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
